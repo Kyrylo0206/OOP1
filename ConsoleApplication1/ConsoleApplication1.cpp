@@ -59,6 +59,21 @@ public:
 			UserName = "-";
 			IsBooked = true;
 		}
+
+		void GetinfoTicket()const {
+			cout << "Ticket ID: " << ID << "\nPassenger: " << UserName << "\nFlight: " << FlightName << "\nSeat: " << Place
+				<< "\nPrice: $" << Price << "\nStatus: " << (IsBooked ? "Booked" : "Cancelled") << "\n";
+		}
+
+		void SetID(int newID) { 
+			ID = newID; 
+		}
+		void SetUserName(const string& name) { 
+			UserName = name; IsBooked = false; 
+		}
+		void DeleteBooking() { 
+			UserName = "-"; IsBooked = false; 
+		}
 	};
 
 class Airplane {
@@ -114,7 +129,7 @@ int main()
 	AirlineSystem airlineSystem("/C:/Users/Кирило/source/repos/Kyrylo0206/OOP1/DATA AIRLINES");
 	string command;
 	while (true) {
-		cout << "Choose the command:\n1)check\n2)book\n3)return\n4)viewID\n5)viewUsername\n6)exit" << endl;
+		cout << "Choose the command:\n1)check\n2)book\n3)return\n4)viewID\n5)viewUsername\n6)viewDate\n7)viewFlightNo\n8)exit" << endl;
 		cin >> command;
 		if (command == "check") {
 			airlineSystem.check();
@@ -130,6 +145,12 @@ int main()
 		}
 		else if (command == "viewName") {
 			airlineSystem.viewName();
+		}
+		else if (command == "viewDate") {
+			airlineSystem.viewDate();
+		}
+		else if (command == "viewFlightNo") {
+			airlineSystem.viewFlightNo();
 		}
 		else if (command == "exit") {
 			break;
