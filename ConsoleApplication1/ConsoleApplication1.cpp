@@ -1,8 +1,65 @@
 ﻿#include <iostream>
 #include <string>
 #include <vector>
+#include <sstream>
 #pragma once 
 using namespace std;
+
+class Ticket {
+private:
+	string UserName;
+	string Date;
+	string FlightName;
+	string Place;
+	int Price;
+	bool IsBooked;
+	int ID;
+public:
+	Ticket(const& int Price, const& string UserName, const& string Date, const& string FlightName, const& string Place, const& bool IsBooked, const& int ID) {
+		: UserName(UserName), Date(Date), Place(Place), FlightName(FlightName), Price(Price), IsBooked(true){}
+		
+		string GetUserName() const {
+			return UserName;
+		}
+
+		bool GetIsBooked() const {
+			return IsBooked;
+		}
+
+		string GetDate() const {
+			return Date;
+		}
+
+		string GetFlightName() const {
+			return FlightName;
+		}
+
+		string GetPlace() const {
+			return Place;
+		}
+
+		int GetPrice() const {
+			return Price;
+		}
+
+		int GetID() const {
+			return ID;
+		}
+
+		void SetID(int newID) {
+			ID = newID;
+		}
+
+		void SetUserName(const string & Name) {
+			UserName = Name;
+			IsBooked = false;
+		}
+
+		void DeleteBooking() {
+			UserName = "-";
+			IsBooked = true;
+		}
+	};
 
 class Airplane {
 private:
@@ -30,26 +87,60 @@ public:
 	}
 
 };
-class Ticket {
-private:
-    void booking_status(char check);
+
+class User {
+	string UserName;
+	vector<Ticket> tickets;
 
 public:
-   
+	User(const string& UserName) : UserName(UserName) {}
+
+	string GetUserName() const {
+		return UserName;
+	}
+
+	vector<Ticket>& UserTickets() {
+		return tickets;
+	}
+
+	void addTicket(const Ticket& ticket) {
+		tickets.push_back(ticket);
+	}
 };
 
 int main()
 {
-	int c;
-
-	string name;
-
 	cout << "Welcome to Airline Reservations System!\n";
-	cout << "Please enter your name: ";
-	getline(cin, name);
+	AirlineSystem airlineSystem("/C:/Users/Кирило/source/repos/Kyrylo0206/OOP1/DATA AIRLINES");
+	string command;
+	while (true) {
+		cout << "Choose the command:\n1)check\n2)book\n3)return\n4)viewID\n5)viewUsername\n6)exit" << endl;
+		cin >> command;
+		if (command == "check") {
+			airlineSystem.check();
+		}
+		else if (command == "book") {
+			airlineSystem.book();
+		}
+		else if (command == "return") {
+			airlineSystem.commandReturn();
+		}
+		else if (command == "viewID") {
+			airlineSystem.viewID();
+		}
+		else if (command == "viewName") {
+			airlineSystem.viewName();
+		}
+		else if (command == "exit") {
+			break;
+		}
+		else {
+			printf("You don't have this command\n");
+		}
+	}
 
-	cout << "Choose a class: ";
-	cin >> c;
+	return 0;
+}
 
 }
 
