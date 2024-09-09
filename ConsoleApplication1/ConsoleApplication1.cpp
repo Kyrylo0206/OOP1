@@ -78,21 +78,27 @@ public:
 
 class Airplane {
 private:
-    int total_seats = 204;
-    vector <bool> availability_seat;
+	vector<Ticket> tickets;
+	string Date;
+	string flightName;
+	int TotalSize;
+	int seatsPerRow;
+
 public:
-	Airplane(int seats) : total_seats(seats), availability_seat(seats, true) {}
-	//check is place free
-	bool SeatAvailable(int seat_number) {
-		if (seat_number < 0 || seat_number > total_seats) {
-			cout << "Invalid seat number.\n";
-			return false;
-		return availability_seat  [seat_number - 1]; 
+	Airplane(const string& date, const string& flightNo, int seats) : Date(date), FlightNo(flightNo), seatsPerRow(seats) {}
+	//check is place free 
+	Ticket<vector> SeatAvailable() const {
+		Ticket<vector> SeatAvailable;
+		for (const auto& ticket : tickets) {
+			if (ticket.GetIsBooked() == true && ticket.GetUserName() == "-") {
+				SeatAvailable.push_back(ticket);
+			}
 		}
+		return SeatAvailable;
 	}
-	bool Booking (int seat_number) {
-		if (SeatAvailable(seat_number)) {
-			availability_seat[seat_number - 1] = false;
+	bool Booking (int seats) {
+		if (SeatAvailable(seats)) {
+			availability_seat[seats - 1] = false;
 			return true;
 		}
 		return false;
@@ -100,7 +106,6 @@ public:
 	int getTotalSeats() const {
 		return total_seats;
 	}
-
 };
 
 class User {
