@@ -35,80 +35,83 @@ private:
 	bool IsBooked;
 	int ID;
 public:
-	Ticket(const& int Price, const& string UserName, const& string Date, const& string FlightName, const& string Place, const& bool IsBooked, const& int ID) {
-		: UserName(UserName), Date(Date), Place(Place), FlightName(FlightName), Price(Price), IsBooked(true){}
-		
-		string GetUserName() const {
-			return UserName;
-		}
+	Ticket(int Price, const string& UserName, const string& Date, const string& FlightName, const string& Place, bool IsBooked, int ID)
+		: UserName(UserName), Date(Date), FlightName(FlightName), Place(Place), Price(Price), IsBooked(IsBooked), ID(ID) {}
 
-		bool GetIsBooked() const {
-			return IsBooked;
-		}
+	string GetUserName() const {
+		return UserName;
+	}
 
-		string GetDate() const {
-			return Date;
-		}
+	bool GetIsBooked() const {
+		return IsBooked;
+	}
 
-		string GetFlightName() const {
-			return FlightName;
-		}
+	string GetDate() const {
+		return Date;
+	}
 
-		string GetPlace() const {
-			return Place;
-		}
+	string GetFlightName() const {
+		return FlightName;
+	}
 
-		int GetPrice() const {
-			return Price;
-		}
+	string GetPlace() const {
+		return Place;
+	}
 
-		int GetID() const {
-			return ID;
-		}
+	int GetPrice() const {
+		return Price;
+	}
 
-		void SetID(int newID) {
-			ID = newID;
-		}
+	int GetID() const {
+		return ID;
+	}
 
-		void SetUserName(const string & Name) {
-			UserName = Name;
-			IsBooked = false;
-		}
+	void SetID(int newID) {
+		ID = newID;
+	}
 
-		void DeleteBooking() {
-			UserName = "-";
-			IsBooked = true;
-		}
+	void SetUserName(const string& Name) {
+		UserName = Name;
+		IsBooked = false;
+	}
 
-		void GetinfoTicket()const {
-			cout << "Ticket ID: " << ID << "\nPassenger: " << UserName << "\nFlight: " << FlightName << "\nSeat: " << Place
-				<< "\nPrice: $" << Price << "\nStatus: " << (IsBooked ? "Booked" : "Cancelled") << "\n";
-		}
-	};
+	void DeleteBooking() {
+		UserName = "-";
+		IsBooked = false;
+	}
+
+	void GetinfoTicket() const {
+		cout << "Ticket ID: " << ID << "\nPassenger: " << UserName << "\nFlight: " << FlightName
+			<< "\nSeat: " << Place << "\nPrice: $" << Price << "\nStatus: " << (IsBooked ? "Booked" : "Cancelled") << "\n";
+	}
+};
+
 
 class Airplane {
 private:
 	vector<Ticket> tickets;
 	string Date;
-	string flightName;
-	int TotalSize;
+	string FlightName;
 	int seatsPerRow;
 
 public:
-	Airplane(const string& date, const string& flightNo, int seats) : Date(date), FlightNo(flightNo), seatsPerRow(seats) {}
-	//check is place free 
-	Ticket<vector> SeatAvailable() const {
-		Ticket<vector> SeatAvailable;
+	Airplane(const string& Date, const string& FlightName, int seatsPerRow)
+		: Date(Date), FlightName(FlightName), seatsPerRow(seatsPerRow) {}
+
+
+	vector<Ticket> SeatAvailable() const {
+		vector<Ticket> availableSeats;
 		for (const auto& ticket : tickets) {
-			if (ticket.GetIsBooked() == true && ticket.GetUserName() == "-") {
-				SeatAvailable.push_back(ticket);
+			if (!ticket.GetIsBooked()) {
+				availableSeats.push_back(ticket);
 			}
 		}
-		return SeatAvailable;
+		return availableSeats;
 	}
+
 	void Booking(const string& UserName, const string& Place, int& ID, vector<Ticket>* IsBookedTickets, vector<User>* users) {
 		for (auto& ticket : tickets) {
-			if (ticket.GetPlace() == Place && ticket.GetIsBooked()) {
+			if (ticket.GetPlace() == Place && !ticket.GetIsBooked()) {
 				ticket.SetUserName(UserName);
 				ticket.SetID(ID);
 				IsBookedTickets->push_back(ticket);
@@ -125,22 +128,22 @@ public:
 					newUser.addTicket(ticket);
 					users->push_back(move(newUser));
 				}
-				cout << "Confirmed with ID " << ID << endl;
+				cout << "Booking confirmed with ID " << ID << endl;
 				return;
 			}
-		
+		}
+		cout << "Place not available for booking.\n";
 	}
+
 	void ReturnTicketByID(const int ticketId) {
 		for (auto& ticket : tickets) {
 			if (ticket.GetID() == ticketId) {
 				ticket.DeleteBooking();
+				cout << "Booking canceled for ticket ID: " << ticketId << endl;
 				return;
 			}
 		}
-	}
-
-	int getTotalSeats() const {
-		return total_seats;
+		cout << "Ticket ID not found.\n";
 	}
 };
 
