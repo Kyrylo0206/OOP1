@@ -1,139 +1,140 @@
 ﻿#include <iostream>
 #include <string>
 #include <vector>
-#include <fstream>  
+#include <fstream>
 #include <sstream>
+#include <algorithm>
+
 using namespace std;
 
 class Ticket {
 private:
-    string UserName;
-    string Date;
-    string FlightName;
-    string Place;
-    int Price;
-    bool IsBooked;
-    int ID;
+    string userName;
+    string date;
+    string flightName;
+    string seat;
+    int price;
+    bool isBooked;
+    int id;
 
 public:
     // Constructor
-    Ticket(int Price, const string& Date, const string& FlightName, const string& Place, int ID)
-        : Price(Price), Date(Date), FlightName(FlightName), Place(Place), ID(ID), IsBooked(false), UserName("-") {}
+    Ticket(int price, const string& date, const string& flightName, const string& seat, int id)
+        : price(price), date(date), flightName(flightName), seat(seat), id(id), isBooked(false), userName("-") {}
 
-    string GetUserName() const { return UserName; }
-    bool GetIsBooked() const { return IsBooked; }
-    string GetDate() const { return Date; }
-    string GetFlightName() const { return FlightName; }
-    string GetPlace() const { return Place; }
-    int GetPrice() const { return Price; }
-    int GetID() const { return ID; }
+    // Getters
+    string getUserName() const { return userName; }
+    bool getIsBooked() const { return isBooked; }
+    string getDate() const { return date; }
+    string getFlightName() const { return flightName; }
+    string getSeat() const { return seat; }
+    int getPrice() const { return price; }
+    int getId() const { return id; }
 
-    void SetID(int newID) { ID = newID; }
-    void SetUserName(const string& Name) {
-        UserName = Name;
-        IsBooked = true;
+    // Setters
+    void setId(int newId) { id = newId; }
+    void bookTicket(const string& name) {
+        userName = name;
+        isBooked = true;
     }
-    void DeleteBooking() {
-        UserName = "-";
-        IsBooked = false;
+    void cancelBooking() {
+        userName = "-";
+        isBooked = false;
     }
-    void DisplayTicketInfo() const {
-        cout << "Ticket ID: " << ID << "\nPassenger: " << UserName << "\nFlight: " << FlightName
-            << "\nSeat: " << Place << "\nPrice: $" << Price << "\nStatus: " << (IsBooked ? "Booked" : "Cancelled") << "\n";
+    void displayTicketInfo() const {
+        cout << "Ticket ID: " << id << "\nPassenger: " << userName << "\nFlight: " << flightName
+            << "\nSeat: " << seat << "\nPrice: $" << price << "\nStatus: " << (isBooked ? "Booked" : "Cancelled") << "\n";
     }
 };
 
 class User {
 private:
-    string UserName;
-    std::vector<Ticket> tickets;
+    string userName;
+    vector<Ticket> tickets;
 
 public:
-    User(const string& UserName) : UserName(UserName) {}
+    User(const string& userName) : userName(userName) {}
 
-    string GetUserName() const { return UserName; }
+    string getUserName() const { return userName; }
 
-    // Return a non-const reference to allow modification were problem with it
-    std::vector<Ticket>& GetUserTickets() { return tickets; }
-
-    // Optionally keep the const version if you need read-only access elsewhere
-    const std::vector<Ticket>& GetUserTickets() const { return tickets; }
-
-    void AddTicket(const Ticket& ticket) {
+    void addTicket(const Ticket& ticket) {
         tickets.push_back(ticket);
     }
+
+    void removeTicketById(int ticketId) {
+        tickets.erase(remove_if(tickets.begin(), tickets.end(),
+            [ticketId](const Ticket& ticket) { return ticket.getId() == ticketId; }), tickets.end());
+    }
+
+    const vector<Ticket>& getTickets() const { return tickets; }
 };
-
-
 
 class Airplane {
 private:
-    std:: vector<Ticket> tickets;
-    string Date;
-    string FlightName;
+    vector<Ticket> tickets;
+    string date;
+    string flightName;
 
 public:
     // Constructor
-    Airplane(const string& Date, const string& FlightName, int seatsPerRow)
-        : Date(Date), FlightName(FlightName) {
+    Airplane(const string& date, const string& flightName, int seatsPerRow)
+        : date(date), flightName(flightName) {
         for (int i = 1; i <= seatsPerRow; ++i) {
-            tickets.emplace_back(100, Date, FlightName, "Seat" + to_string(i), i);
+            tickets.emplace_back(100, date, flightName, "Seat" + to_string(i), 0); // ID will be set when booked
         }
     }
 
-    string GetDate() const { return Date; }
-    string GetFlightName() const { return FlightName; }
+    string getDate() const { return date; }
+    string getFlightName() const { return flightName; }
 
-    vector<Ticket> GetAvailableSeats() const {
+    vector<Ticket> getAvailableSeats() const {
         vector<Ticket> availableSeats;
         for (const auto& ticket : tickets) {
-            if (!ticket.GetIsBooked()) {
+            if (!ticket.getIsBooked()) {
                 availableSeats.push_back(ticket);
             }
         }
         return availableSeats;
     }
 
-    bool BookSeat(const string& UserName, const string& Place, int& ID, vector<Ticket>& BookedTickets, vector<User>& Users) {
+    Ticket* findTicketBySeat(const string& seat) {
         for (auto& ticket : tickets) {
-            if (ticket.GetPlace() == Place && !ticket.GetIsBooked()) {
-                ticket.SetUserName(UserName);
-                ticket.SetID(ID);
-                BookedTickets.push_back(ticket);
-                bool userFound = false;
-
-                for (auto& user : Users) {
-                    if (user.GetUserName() == UserName) {
-                        user.AddTicket(ticket);
-                        userFound = true;
-                        break;
-                    }
-                }
-
-                if (!userFound) {
-                    User newUser(UserName);
-                    newUser.AddTicket(ticket);
-                    Users.push_back(move(newUser));
-                }
-
-                cout << "Booking confirmed with ID " << ID << endl;
-                return true;
+            if (ticket.getSeat() == seat) {
+                return &ticket;
             }
         }
-        cout << "Place not available for booking.\n";
+        return nullptr;
+    }
+
+    bool bookSeat(const string& userName, const string& seat, int newId) {
+        Ticket* ticket = findTicketBySeat(seat);
+        if (ticket && !ticket->getIsBooked()) {
+            ticket->bookTicket(userName);
+            ticket->setId(newId);
+            return true;
+        }
         return false;
     }
 
-    bool CancelTicketByID(int ticketId) {
+    bool cancelTicketById(int ticketId) {
         for (auto& ticket : tickets) {
-            if (ticket.GetID() == ticketId) {
-                ticket.DeleteBooking();
-                cout << "Booking canceled for ticket ID: " << ticketId << endl;
-                return true;
+            if (ticket.getId() == ticketId) {
+                if (ticket.getIsBooked()) {
+                    ticket.cancelBooking();
+                    return true;
+                }
             }
         }
-        cout << "Ticket ID not found.\n";
         return false;
+    }
+
+    Ticket* findBookedTicketById(int ticketId) {
+        for (auto& ticket : tickets) {
+            if (ticket.getId() == ticketId && ticket.getIsBooked()) {
+                return &ticket;
+            }
+        }
+        return nullptr;
     }
 };
 
@@ -141,12 +142,10 @@ class System {
 private:
     vector<Airplane> flights;
     vector<User> users;
-    vector<Ticket> bookedTickets;
-    int newID = 11111;
+    int newId = 11111;
 
 public:
-    // Load flights from file
-    void LoadFlightsFromFile(const string& filePath) {
+    void loadFlightsFromFile(const string& filePath) {
         ifstream file(filePath);
         if (!file.is_open()) {
             cout << "Error opening file: " << filePath << endl;
@@ -159,22 +158,21 @@ public:
             string date, flightName;
             int seatsPerRow;
             ss >> date >> flightName >> seatsPerRow;
-            flights.push_back(Airplane(date, flightName, seatsPerRow));
+            flights.emplace_back(date, flightName, seatsPerRow);
         }
         cout << "Flights loaded successfully from " << filePath << endl;
     }
 
-    // Check flight availability
-    void CheckFlightAvailability(const string& Date, const string& FlightName) {
-        for (auto& flight : flights) {
-            if (flight.GetDate() == Date && flight.GetFlightName() == FlightName) {
-                auto availableSeats = flight.GetAvailableSeats();
+    void checkFlightAvailability(const string& date, const string& flightName) {
+        for (const auto& flight : flights) {
+            if (flight.getDate() == date && flight.getFlightName() == flightName) {
+                auto availableSeats = flight.getAvailableSeats();
                 if (availableSeats.empty()) {
                     cout << "No available seats.\n";
                 }
                 else {
                     for (const auto& ticket : availableSeats) {
-                        cout << "Seat: " << ticket.GetPlace() << ", Price: $" << ticket.GetPrice() << endl;
+                        cout << "Seat: " << ticket.getSeat() << ", Price: $" << ticket.getPrice() << endl;
                     }
                 }
                 return;
@@ -183,12 +181,21 @@ public:
         cout << "Flight not found.\n";
     }
 
-    // Book a ticket
-    void BookTicket(const string& UserName, const string& Date, const string& FlightName, const string& Seat) {
+    void bookTicket(const string& userName, const string& date, const string& flightName, const string& seat) {
         for (auto& flight : flights) {
-            if (flight.GetDate() == Date && flight.GetFlightName() == FlightName) {
-                if (flight.BookSeat(UserName, Seat, newID, bookedTickets, users)) {
-                    newID++;
+            if (flight.getDate() == date && flight.getFlightName() == flightName) {
+                if (flight.bookSeat(userName, seat, newId)) {
+                    Ticket* bookedTicket = flight.findTicketBySeat(seat);
+                    if (bookedTicket) {
+                        User* user = findOrCreateUser(userName);
+                        user->addTicket(*bookedTicket);
+                        cout << "Booking confirmed with ID " << newId << endl;
+                        newId++;
+                    }
+                    return;
+                }
+                else {
+                    cout << "Seat not available for booking.\n";
                     return;
                 }
             }
@@ -196,65 +203,73 @@ public:
         cout << "Flight or seat not found.\n";
     }
 
-    // Cancel a ticket
-    void CancelTicket(int ticketID) {
+    void cancelTicket(int ticketId) {
         for (auto& flight : flights) {
-            if (flight.CancelTicketByID(ticketID)) {
-                // Remove from user's booked tickets
+            if (flight.cancelTicketById(ticketId)) {
+                // Remove ticket from user's booked tickets
                 for (auto& user : users) {
-                    auto& tickets = user.GetUserTickets();
-                    tickets.erase(remove_if(tickets.begin(), tickets.end(),
-                        [ticketID](const Ticket& ticket) { return ticket.GetID() == ticketID; }),
-                        tickets.end());
+                    user.removeTicketById(ticketId);
                 }
+                cout << "Booking canceled for ticket ID: " << ticketId << endl;
                 return;
             }
         }
         cout << "Ticket ID not found.\n";
     }
 
-    // View a ticket by ID
-    void ViewTicketByID(int ticketID) {
-        for (const auto& ticket : bookedTickets) {
-            if (ticket.GetID() == ticketID) {
-                ticket.DisplayTicketInfo();
+ 
+    void viewTicketById(int ticketId) {
+        for (const auto& flight : flights) {
+            Ticket* ticket = flight.findBookedTicketById(ticketId);
+            if (ticket) {
+                ticket->displayTicketInfo();
                 return;
             }
         }
         cout << "Ticket with given ID not found.\n";
     }
 
-    // View tickets by username
-    void ViewTicketsByName(const string& userName) {
+     void viewTicketsByName(const string& userName) {
         for (const auto& user : users) {
-            if (user.GetUserName() == userName) {
-                const auto& tickets = user.GetUserTickets();
+            if (user.getUserName() == userName) {
+                const auto& tickets = user.getTickets();
                 if (tickets.empty()) {
                     cout << "No tickets found for passenger: " << userName << endl;
                     return;
                 }
                 for (const auto& ticket : tickets) {
-                    ticket.DisplayTicketInfo();
+                    ticket.displayTicketInfo();
                 }
                 return;
             }
         }
         cout << "No user found with name: " << userName << endl;
     }
+
+private:
+    User* findOrCreateUser(const string& userName) {
+        for (auto& user : users) {
+            if (user.getUserName() == userName) {
+                return &user;
+            }
+        }
+        users.emplace_back(userName);
+        return &users.back();
+    }
 };
 
-int main()
-{
+int main() {
     cout << "Welcome to Airline Reservations System!\n";
 
     System airlineSystem;
 
-    string filePath = "C:\\Users\\Кирило\\source\\repos\\Kyrylo0206\\OOP1\\DATA AIRLINES";
-    airlineSystem.LoadFlightsFromFile(filePath);
+    string filePath = "DATA AIRLINES.txt"; 
+    airlineSystem.loadFlightsFromFile(filePath);
 
     string command;
     while (true) {
-        cout << "Choose the command:\n1) Check availability\n2) Book ticket\n3) Cancel ticket\n4) View ticket by ID\n5) View tickets by username\n6) Exit" << endl;
+        cout << "\nChoose a command:\n1) Check availability\n2) Book ticket\n3) Cancel ticket\n"
+            << "4) View ticket by ID\n5) View tickets by username\n6) Exit\n";
         cin >> command;
 
         if (command == "1") {
@@ -263,7 +278,7 @@ int main()
             cin >> date;
             cout << "Enter flight name: ";
             cin >> flightName;
-            airlineSystem.CheckFlightAvailability(date, flightName);
+            airlineSystem.checkFlightAvailability(date, flightName);
         }
         else if (command == "2") {
             string userName, date, flightName, seat;
@@ -275,25 +290,25 @@ int main()
             cin >> flightName;
             cout << "Enter seat: ";
             cin >> seat;
-            airlineSystem.BookTicket(userName, date, flightName, seat);
+            airlineSystem.bookTicket(userName, date, flightName, seat);
         }
         else if (command == "3") {
-            int ticketID;
+            int ticketId;
             cout << "Enter ticket ID to cancel: ";
-            cin >> ticketID;
-            airlineSystem.CancelTicket(ticketID);
+            cin >> ticketId;
+            airlineSystem.cancelTicket(ticketId);
         }
         else if (command == "4") {
-            int ticketID;
+            int ticketId;
             cout << "Enter ticket ID: ";
-            cin >> ticketID;
-            airlineSystem.ViewTicketByID(ticketID);
+            cin >> ticketId;
+            airlineSystem.viewTicketById(ticketId);
         }
         else if (command == "5") {
             string userName;
             cout << "Enter your name: ";
             cin >> userName;
-            airlineSystem.ViewTicketsByName(userName);
+            airlineSystem.viewTicketsByName(userName);
         }
         else if (command == "6") {
             cout << "Exiting the system. Goodbye!" << endl;
