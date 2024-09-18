@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
+#include <map>
 
 using namespace std;
 
@@ -74,13 +75,30 @@ private:
     vector<Ticket> tickets;
     string date;
     string flightName;
+    map<int, int> seatPrices; // Map to store price for each seat number
 
 public:
     // Constructor
-    Airplane(const string& date, const string& flightName, int seatsPerRow)
-        : date(date), flightName(flightName) {
-        for (int i = 1; i <= seatsPerRow; ++i) {
-            tickets.emplace_back(100, date, flightName, "Seat" + to_string(i), 0); // ID will be set when booked
+    Airplane(const string& date, const string& flightName, const map<int, int>& seatPrices)
+        : date(date), flightName(flightName), seatPrices(seatPrices) {
+        int maxSeatNumber = 0;
+        if (!seatPrices.empty()) {
+            maxSeatNumber = seatPrices.rbegin()->first;
+        }
+        for (int i = 1; i <= maxSeatNumber; ++i) {
+            int price = getPriceForSeat(i);
+            tickets.emplace_back(price, date, flightName, "Seat" + to_string(i), 0);
+        }
+    }
+
+    // Get price based on the seat number
+    int getPriceForSeat(int seatNumber) const {
+        auto it = seatPrices.find(seatNumber);
+        if (it != seatPrices.end()) {
+            return it->second;
+        }
+        else {
+            return 0; 
         }
     }
 
@@ -100,6 +118,15 @@ public:
     Ticket* findTicketBySeat(const string& seat) {
         for (auto& ticket : tickets) {
             if (ticket.getSeat() == seat) {
+                return &ticket;
+            }
+        }
+        return nullptr;
+    }
+
+    const Ticket* findBookedTicketById(int ticketId) const {
+        for (const auto& ticket : tickets) {
+            if (ticket.getId() == ticketId && ticket.getIsBooked()) {
                 return &ticket;
             }
         }
@@ -127,15 +154,6 @@ public:
         }
         return false;
     }
-
-    Ticket* findBookedTicketById(int ticketId) {
-        for (auto& ticket : tickets) {
-            if (ticket.getId() == ticketId && ticket.getIsBooked()) {
-                return &ticket;
-            }
-        }
-        return nullptr;
-    }
 };
 
 class System {
@@ -158,7 +176,40 @@ public:
             string date, flightName;
             int seatsPerRow;
             ss >> date >> flightName >> seatsPerRow;
-            flights.emplace_back(date, flightName, seatsPerRow);
+
+            map<int, int> seatPrices;
+
+            // Зчитуємо решту рядка
+            string restOfLine;
+            getline(ss, restOfLine);
+            stringstream rangesStream(restOfLine);
+            string rangeInfo;
+
+            while (rangesStream >> rangeInfo) {
+                // Парсимо діапазон місць
+                int rangeStart, rangeEnd;
+                char dash;
+                stringstream rangeStream(rangeInfo);
+                rangeStream >> rangeStart >> dash >> rangeEnd;
+
+                string priceStr;
+                rangesStream >> priceStr;
+                if (!priceStr.empty() && priceStr.back() == '$') {
+                    priceStr.pop_back(); // Видаляємо символ $
+                }
+                else {
+                    cout << "Invalid price format in data file." << endl;
+                    continue;
+                }
+                int price = stoi(priceStr);
+
+                // Зберігаємо ціну для кожного місця в діапазоні
+                for (int seatNum = rangeStart; seatNum <= rangeEnd; ++seatNum) {
+                    seatPrices[seatNum] = price;
+                }
+            }
+
+            flights.emplace_back(date, flightName, seatPrices);
         }
         cout << "Flights loaded successfully from " << filePath << endl;
     }
@@ -206,7 +257,6 @@ public:
     void cancelTicket(int ticketId) {
         for (auto& flight : flights) {
             if (flight.cancelTicketById(ticketId)) {
-                // Remove ticket from user's booked tickets
                 for (auto& user : users) {
                     user.removeTicketById(ticketId);
                 }
@@ -217,10 +267,9 @@ public:
         cout << "Ticket ID not found.\n";
     }
 
- 
     void viewTicketById(int ticketId) {
         for (const auto& flight : flights) {
-            Ticket* ticket = flight.findBookedTicketById(ticketId);
+            const Ticket* ticket = flight.findBookedTicketById(ticketId);
             if (ticket) {
                 ticket->displayTicketInfo();
                 return;
@@ -229,7 +278,7 @@ public:
         cout << "Ticket with given ID not found.\n";
     }
 
-     void viewTicketsByName(const string& userName) {
+    void viewTicketsByName(const string& userName) {
         for (const auto& user : users) {
             if (user.getUserName() == userName) {
                 const auto& tickets = user.getTickets();
@@ -263,7 +312,7 @@ int main() {
 
     System airlineSystem;
 
-    string filePath = "DATA AIRLINES.txt"; 
+    string filePath = "DATA AIRLINES.txt";
     airlineSystem.loadFlightsFromFile(filePath);
 
     string command;
@@ -274,7 +323,7 @@ int main() {
 
         if (command == "1") {
             string date, flightName;
-            cout << "Enter flight date: ";
+            cout << "Enter flight date (dd.mm.yyyy): ";
             cin >> date;
             cout << "Enter flight name: ";
             cin >> flightName;
@@ -284,11 +333,11 @@ int main() {
             string userName, date, flightName, seat;
             cout << "Enter your name: ";
             cin >> userName;
-            cout << "Enter flight date: ";
+            cout << "Enter flight date (dd.mm.yyyy): ";
             cin >> date;
             cout << "Enter flight name: ";
             cin >> flightName;
-            cout << "Enter seat: ";
+            cout << "Enter seat (e.g., Seat5): ";
             cin >> seat;
             airlineSystem.bookTicket(userName, date, flightName, seat);
         }
